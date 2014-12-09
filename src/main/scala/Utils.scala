@@ -11,69 +11,21 @@ object Utils {
   implicit class Gr(g: Graph[Int, UnDiEdge]) {
 
     /**
-     * Build BFS tree for given graph.
+     * Check whether g is homeomorphic to g2.
      */
-    def buildBFSTree: Graph[Int, UnDiEdge] = {
-      val v0 = g.nodes.head
-      var tree = Graph[Int, UnDiEdge]()
-      tree += v0
-      var back = Graph[Int, UnDiEdge]()
-      val Q = mutable.Queue(v0)
-      val N0 = mutable.Map(v0 -> 1)
-      var k = 1
-
-      while (Q.nonEmpty) {
-        val x = Q.front
-        def yOpt = (x.neighbors filterNot ((tree union back).nodes.contains(_))).headOption
-        while (yOpt.isDefined) {
-          val y = yOpt.get
-          val e = (x.edges filter (_._1 == x) filter (_._2 == y)).head
-          if (N0.contains(y))
-            back += e
-          else {
-            tree += e
-            Q.enqueue(y)
-            k += 1
-            N0(y) = k
-          }
-        }
-        Q.dequeue()
-      }
-      tree
+    def homeomorphicTo(g2: Graph[Int, UnDiEdge]): Boolean = {
+      if (g.getCCN != g2.getCCN) false
+      else if (g.getCCN != 1) ??? // TODO: some sort of recursion.
+      else if (g.graphSize - g.order != g2.graphSize - g2.order) false
+      else if (!(g degEq g2)) false
+      else if (! (g.smoothed isomorphicTo g2.smoothed)) false
+      else true
     }
 
     /**
-     * Obtain the number of connected components of graph
+     * Check whether g is isomorphic to g2
      */
-    def getCCN: Int = {
-      if (g.isConnected) 1 else 1 + (g diff g.buildBFSTree).getCCN
-    }
-
-    /**
-     * Obtain some connected component of graph
-     */
-    def getCC: Graph[Int, UnDiEdge] = g diff (g diff g.buildBFSTree)
-
-    /**
-     * Obtain set of all the connected components of graph
-     */
-    def getCCs: Set[Graph[Int, UnDiEdge]] = {
-      if (g.isConnected) Set(g) else Set(g.getCC) union (g diff g.getCC).getCCs
-    }
-
-    /**
-     * Calculate number of k-degree nodes
-     */
-    def degKCount(k: Int): Int = {
-      val count = g.degreeNodesMap.get(k)
-      if (count.nonEmpty) count.head.size else 0
-    }
-
-    /**
-     * Check whether the graphs g and g2 are degree-equal, i.e.
-     * forall k != 2 g.degKCount == g2.degKCount
-     */
-    def degEq(g2: Graph[Int, UnDiEdge]): Boolean = ((0 until g.maxDegree + 1) diff GenSeq(2)) forall (k => g.degKCount(k) == g2.degKCount(k))
+    def isomorphicTo(g2: Graph[Int, UnDiEdge]): Boolean = ???
 
     /**
      * @return Graph with no simple paths of length >1
@@ -128,20 +80,68 @@ object Utils {
     }
 
     /**
-     * Check whether g is homeomorphic to g2.
+     * Obtain the number of connected components of graph
      */
-    def homeomorphicTo(g2: Graph[Int, UnDiEdge]): Boolean = {
-      if (g.getCCN != g2.getCCN) false
-      else if (g.getCCN != 1) ??? // TODO: some sort of recursion.
-      else if (g.graphSize - g.order != g2.graphSize - g2.order) false
-      else if (!(g degEq g2)) false
-      else if (! (g.smoothed isomorphicTo g2.smoothed)) false
-      else true
+    def getCCN: Int = {
+      if (g.isConnected) 1 else 1 + (g diff g.buildBFSTree).getCCN
     }
 
     /**
-     * Check whether g is isomorphic to g2
+     * Obtain some connected component of graph
      */
-    def isomorphicTo(g2: Graph[Int, UnDiEdge]): Boolean = ???
+    def getCC: Graph[Int, UnDiEdge] = g diff (g diff g.buildBFSTree)
+
+    /**
+     * Obtain set of all the connected components of graph
+     */
+    def getCCs: Set[Graph[Int, UnDiEdge]] = {
+      if (g.isConnected) Set(g) else Set(g.getCC) union (g diff g.getCC).getCCs
+    }
+
+    /**
+     * Build BFS tree for given graph.
+     */
+    def buildBFSTree: Graph[Int, UnDiEdge] = {
+      val v0 = g.nodes.head
+      var tree = Graph[Int, UnDiEdge]()
+      tree += v0
+      var back = Graph[Int, UnDiEdge]()
+      val Q = mutable.Queue(v0)
+      val N0 = mutable.Map(v0 -> 1)
+      var k = 1
+
+      while (Q.nonEmpty) {
+        val x = Q.front
+        def yOpt = (x.neighbors filterNot ((tree union back).nodes.contains(_))).headOption
+        while (yOpt.isDefined) {
+          val y = yOpt.get
+          val e = (x.edges filter (_._1 == x) filter (_._2 == y)).head
+          if (N0.contains(y))
+            back += e
+          else {
+            tree += e
+            Q.enqueue(y)
+            k += 1
+            N0(y) = k
+          }
+        }
+        Q.dequeue()
+      }
+      tree
+    }
+
+    /**
+     * Calculate number of k-degree nodes
+     */
+    def degKCount(k: Int): Int = {
+      val count = g.degreeNodesMap.get(k)
+      if (count.nonEmpty) count.head.size else 0
+    }
+
+    /**
+     * Check whether the graphs g and g2 are degree-equal, i.e.
+     * forall k != 2 g.degKCount == g2.degKCount
+     */
+    def degEq(g2: Graph[Int, UnDiEdge]): Boolean = ((0 until g.maxDegree + 1) diff GenSeq(2)) forall (k => g.degKCount(k) == g2.degKCount(k))
   }
 }
