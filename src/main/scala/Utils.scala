@@ -1,7 +1,14 @@
-import scala.collection.{GenSet, GenSeq, mutable}
+import java.util
+
+import com.sun.jna.{Native, Memory, Pointer, Structure}
+
+import scala.collection.{mutable, GenSet, GenSeq}
+import scala.collection.JavaConverters._
+import scala.util.control.Breaks._
 import scalax.collection.Graph
 import scalax.collection.GraphEdge.UnDiEdge
-import util.control.Breaks._
+import sna.Library
+
 
 /**
  * @author foodzee.
@@ -25,7 +32,12 @@ object Utils {
     /**
      * Check whether g is isomorphic to g2
      */
-    def isomorphicTo(g2: Graph[Int, UnDiEdge]): Boolean = ???
+    def isomorphicTo(g2: Graph[Int, UnDiEdge]): Boolean = {
+      val nautyLib = Library("nauty-scala-interface")
+      val sg = new sparsegraph(g)
+      val sg2 = new sparsegraph(g2)
+      nautyLib.isomorphic(sg.ByReference,sg2.ByReference)[Boolean]
+    }
 
     /**
      * @return Graph with no simple paths of length >1
@@ -142,6 +154,73 @@ object Utils {
      * Check whether the graphs g and g2 are degree-equal, i.e.
      * forall k != 2 g.degKCount == g2.degKCount
      */
-    def degEq(g2: Graph[Int, UnDiEdge]): Boolean = ((0 until g.maxDegree + 1) diff GenSeq(2)) forall (k => g.degKCount(k) == g2.degKCount(k))
+    def degEq(g2: Graph[Int, UnDiEdge]): Boolean = ((0 to g.maxDegree) diff GenSeq(2)) forall (k => g.degKCount(k) == g2.degKCount(k))
+  }
+
+
+  /**
+   * Structure representing graph to be passed to nauty.
+   */
+  class sparsegraph extends Structure {
+    var nv  : Int         = 0     // the number of vertices
+    var nde : Int         = 0     // the number of directed edges
+    var v   : Pointer     = Pointer.NULL  // array of vertices' neighbors
+    var d   : Pointer     = Pointer.NULL  // array of vertices' degrees
+    var e   : Pointer     = Pointer.NULL  // array of edges
+    var w   : Pointer     = Pointer.NULL  // unused
+    // actual length of arrays
+    var vlen: Int         = 0
+    var dlen: Int         = 0
+    var elen: Int         = 0
+    var wlen: Int         = 0 // unused
+
+    override def getFieldOrder = List("nv","nde","v","d","e","w","vlen","dlen","elen","wlen").asJava
+    object ByReference extends sparsegraph with Structure.ByReference {}
+
+    /**
+     * @param g Graph to be converted to sparse representation.
+     */
+    def this(g: Graph[Int, UnDiEdge]) = {
+      this()
+      nv = g.order
+      nde = 2 * g.graphSize // Number of directed edges == 2*number of undirected edges
+
+      // Allocate memory for arrays
+      val intSize = Native.getNativeSize(Integer.TYPE)
+      v = new Memory(nv * intSize)
+      d = new Memory(nv * intSize)
+      e = new Memory(nde * intSize)
+      vlen = nv
+      dlen = nv
+      elen = nde
+
+      // Fill in d[] and build v-i mappings
+      val vimap = mutable.Map[Graph[Int, UnDiEdge]#NodeT, Int]() // vertex-to-integer mapping
+      val ivmap = mutable.Map[Int, Graph[Int, UnDiEdge]#NodeT]() // integer-to-vertex mapping
+
+      val iter = g.nodes.iterator
+      for (i <- 0 until nv) {
+        val v = iter.next()
+        d.setInt(i * intSize, v.degree)
+
+        val vi = (v, i)
+        vimap += vi
+        val iv = (i, v)
+        ivmap += iv
+      }
+      assert(! iter.hasNext)
+
+      // Fill in v[] and e[]
+      var j = 0
+      for (i <- 0 until nv) {
+        v.setInt(i * intSize, j)
+        val u = ivmap.get(i).get
+        for (w <- u.neighbors) {
+          val k = vimap.get(w).get
+          e.setInt(j * intSize, k)
+          j += 1
+        }
+      }
+    }
   }
 }

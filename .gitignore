@@ -59,6 +59,11 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 
+### Code::Blocks
+*.cbp
+*.depend
+*.layout
+
 
 ### C template
 # Object files
