@@ -14,18 +14,18 @@ After checking the necessary conditions by call like
     val (can, msg) = g1.canBeHomeomorphicTo(g2)
 
 `can: Boolean` will contain
-* `false` if one of the conditions have been unsatisfied and hence there is no homeomorphism between given graphs;
+* `false` if one of the conditions has been unsatisfied and hence there is no homeomorphism between given graphs;
 * `true`  if all necessary conditions satisfied and hence there CAN be some homeomorphism found.
 
 
-If `can == true` the attempt on finding the homeomorphism can be made by calling
+If `can == true` an attempt on finding the homeomorphism can be made by calling
 
     val (seq, msg) = findHomeomorphism(g1, g2)
 
 `seq: Option[GenSeq[...]]` will contain
 * `None` if homeomorphism wasn't found;
-* sequence of graphs starting from `G_0_1 == g1`, `G_0_2 == g2` and ended with `G_n_1`, `G_n_2` such, that
-  + for each `G_i_k` (0 < i <= n; k = 1, 2) `G_i_k` obtained from `G_(i-1)_k` by subdividing an edge of `G_(i-1)_k`;
+* sequence of graphs starting from `G_0_1 == g1`, `G_0_2 == g2` and ending with `G_n_1`, `G_n_2` such, that
+  + for each `G_i_k (0 < i <= n; k = 1, 2)`, `G_i_k` is obtained from `G_(i-1)_k` by subdividing an edge of `G_(i-1)_k`;
   + `G_n_1` is isomorphic to `G_n_2`.
 
 
@@ -53,7 +53,7 @@ TODO
 * The homeomorphism-building algorithm is quite dumb, it could be extended/rewritten to be faster and more accurate.
 * Make `libnauty-scala-interface.so` visible from Scala in a more accurate way (m.b. like [here][3]).
 * Make it cross-platform (it'd be easy after finishing previous step).
-* Make [nauty][1] be a part of [Scala Graph][2] (dreams, or dreams...)
+* Make [nauty][1] be a part of [Scala Graph][2] (Is it just a dream?)
 
 Any contributions would be very appreciated!
 
@@ -61,8 +61,8 @@ Any contributions would be very appreciated!
 Credits
 -------
 
-Thanks a lot to [Scala Graph][2] team for their great lib.
-Another portion of thanks is for Brendan McKay for [nauty][1] that was already mentioned.
+Thanks a lot to [Scala Graph][2] team for their great lib
+and to Brendan McKay for [nauty][1] that was already mentioned as very helpful.
 
 
 
