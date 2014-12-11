@@ -1,6 +1,6 @@
 import com.sun.jna.{Native, Memory, Pointer, Structure}
 
-import scala.collection.{mutable, GenSet, GenSeq}
+import scala.collection.{GenSeq, mutable, GenSet}
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks._
 import scalax.collection.Graph
@@ -24,10 +24,30 @@ object Utils {
      *         </ul>
      */
     def canBeHomeomorphicTo(g2: Graph[Int, UnDiEdge]): (Boolean, String) = {
-      if (g.getCCN != g2.getCCN)
+      val k = g.getCCN
+      if (k != g2.getCCN)
         (false, "Graphs have different number of connected components.")
-      else if (g.getCCN != 1)
-        ??? // TODO: some sort of recursion.
+      else if (k != 1) {
+        val gCCs = g.getCCs
+        val g2CCs = g2.getCCs
+        val gIter = gCCs.iterator
+
+        // Build matrix of possible homeomorphisms of connected components.
+        val m = Array.ofDim[Int](k,k)
+        for (i <- 0 until k) {
+          val gi = gIter.next()
+          val g2Iter = g2CCs.iterator
+          for (j <- 0 until k) {
+            val g2i = g2Iter.next()
+            val (b, msg) = gi canBeHomeomorphicTo g2i
+            m(i)(j) = if (b) 1 else 0
+          }
+        }
+
+        // Check if there is at least one possible homeomorphism of entire graphs.
+        // To do it, make the matrix triangle.
+        (m.det != 0, "While checking non-connected graph.")
+      }
       else if (g.graphSize - g.order != g2.graphSize - g2.order)
         (false, "A necessary condition broken.")
       else if (!(g degEq g2))
@@ -111,10 +131,10 @@ object Utils {
     def getCC: Graph[Int, UnDiEdge] = g diff (g diff g.buildBFSTree)
 
     /**
-     * Obtain set of all the connected components of graph
+     * Obtain sequence of all the connected components of graph
      */
-    def getCCs: Set[Graph[Int, UnDiEdge]] = {
-      if (g.isConnected) Set(g) else Set(g.getCC) union (g diff g.getCC).getCCs
+    def getCCs: GenSeq[Graph[Int, UnDiEdge]] = {
+      if (g.isConnected) GenSeq(g) else GenSeq(g.getCC) union (g diff g.getCC).getCCs
     }
 
     /**
@@ -227,6 +247,59 @@ object Utils {
           j += 1
         }
       }
+    }
+  }
+
+  implicit class Matrix(m: Array[Array[Int]]) {
+    def det: Int = {
+      var det = 1
+      val N = m.length
+      def rowWithMaxInCol(start_i: Int, j: Int) = {
+        var i = start_i
+        var row = i
+        while (i < N && m(i)(j) == 0)
+          i += 1
+        if (i == N) -1
+        else {
+          var max = m(i)(j)
+          row = i
+
+          while (i < N) {
+            if (m(i)(j) != 0 && max < m(i)(j)) {
+              max = m(i)(j)
+              row = i
+            }
+            i += 1
+          }
+
+          row
+        }
+      }
+
+      def swapRows(r1: Int, r2: Int) = {
+        for (j <- 0 until N) {
+          val tmp = m(r1)(j)
+          m(r1)(j) = m(r2)(j)
+          m(r2)(j) = tmp
+        }
+      }
+
+      for (i <- 0 until N) {
+        val row = rowWithMaxInCol(i,i)
+        if (row == -1) det = 0
+        else {
+          det *= m(row)(i)
+          if (i != row) swapRows(i, row)
+
+          for (ii <- i + 1 until N) {
+            val tmp = m(ii)(i)
+            for (j <- i until N)
+              m(ii)(j) -= m(i)(j) * tmp
+          }
+        }
+      }
+
+      det
     }
   }
 }
