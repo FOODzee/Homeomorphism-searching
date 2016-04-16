@@ -139,8 +139,9 @@ private[graphOps] object Utils {
      * @return Value of added vertex.
      */
     def newVertex: Int = {
-      assert(g.add(lastUsed-1))
       lastUsed -= 1
+      val added = g.add(lastUsed)
+      assert(added)
       lastUsed
     }
   }
@@ -157,7 +158,7 @@ private[graphOps] object Utils {
 
       for (i <- 0 until N) {
         val row = rowWithMaxInCol(i,i)
-        if (row == -1) det = 0
+        if (row == -1) return 0
         else {
           det *= m(row)(i)
           if (i != row) swapRows(i, row)

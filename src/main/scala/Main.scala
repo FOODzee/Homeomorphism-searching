@@ -17,6 +17,8 @@ object Main extends App {
     val (can, msg) = g1 canBeHomeomorphicTo g2
 
     println("=============")
+    println(s"g1 = $g1")
+    println(s"g2 = $g2")
     if (can) {
       val (home, msg) = findHomeomorphism(g2, g1)
       println(msg)

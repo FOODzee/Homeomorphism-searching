@@ -30,8 +30,10 @@ object HomeBuilding {
       val k = g.getCCN
       if (k != g2.getCCN)
         (false, "Graphs have different number of connected components.")
-      else if (k != 1)
-        (nonconCanBeHom(g2), "While checking non-connected graph.")
+      else if (k != 1) {
+        val can = nonconCanBeHom(g2)
+        (can, s"$can while checking non-connected graph.")
+      }
       else if (g.graphSize - g.order != g2.graphSize - g2.order)
         (false, "A necessary condition broken.")
       else if (!(g degEq g2))
@@ -54,13 +56,9 @@ object HomeBuilding {
 
       // Build matrix of possible homeomorphisms of connected components.
       val m = Array.ofDim[Int](k, k)
-      val gIter = gCCs.iterator
-      for (i <- 0 until k) {
-        val gi = gIter.next()
-        val g2Iter = g2CCs.iterator
-        for (j <- 0 until k) {
-          val g2i = g2Iter.next()
-          val (b, msg) = gi canBeHomeomorphicTo g2i
+      for ((gi, i) <- gCCs.zipWithIndex) {
+        for ((g2j, j) <- g2CCs.zipWithIndex) {
+          val (b, _) = gi canBeHomeomorphicTo g2j
           m(i)(j) = if (b) 1 else 0
         }
       }
